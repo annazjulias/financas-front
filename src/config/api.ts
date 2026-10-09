@@ -1,6 +1,7 @@
+
 import { auth } from "./firebase";
 
-const API_URL = "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export async function apiRequest(
   endpoint: string,
@@ -14,30 +15,34 @@ export async function apiRequest(
 
   const token = await user.getIdToken();
 
-  const headers: HeadersInit = {
-    Authorization: `Bearer ${token}`,
-    ...options.headers,
-  };
+  const headers = new Headers(options.headers);
 
-  // Só envia Content-Type quando existe um body
-  if (options.body) {
-    headers["Content-Type"] = "application/json";
+  headers.set("Authorization", `Bearer ${token}`);
+
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(
-    `${API_URL}${endpoint}`,
-    {
-      ...options,
-      headers,
-    }
-  );
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type");
+
+  const data = contentType?.includes("application/json")
+    ? await response.json()
+    : await response.text();
 
   if (!response.ok) {
-    throw new Error(
-      data.message || "Erro ao comunicar com a API."
-    );
+    const message =
+      typeof data === "object" && data !== null && "message" in data
+        ? String(data.message)
+        : typeof data === "string" && data
+          ? data
+          : "Erro ao comunicar com a API.";
+
+    throw new Error(message);
   }
 
   return data;
