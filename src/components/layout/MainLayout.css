@@ -1,0 +1,17 @@
+.main-layout {
+  min-height: 100vh;
+  background: #f7f8fa;
+}
+
+.main-content {
+  min-height: 100vh;
+  margin-left: 250px;
+}
+
+/* MOBILE */
+
+@media (max-width: 900px) {
+  .main-content {
+    margin-left: 0;
+  }
+}
